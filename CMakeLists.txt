@@ -116,8 +116,9 @@ source_group("generated" FILES
 
 
 if(DILIGENT_INSTALL_FX)
+
+if (NOT (${DILIGENT_USE_VCPKG}))
     install(TARGETS				 DiligentFX
-            EXPORT DiligentFXTarget
             ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}/${DILIGENT_FX_DIR}/$<CONFIG>"
             LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}/${DILIGENT_FX_DIR}/$<CONFIG>"
             RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}/${DILIGENT_FX_DIR}/$<CONFIG>"
@@ -127,6 +128,19 @@ if(DILIGENT_INSTALL_FX)
             NAMESPACE Diligent::
             DESTINATION lib/cmake/diligent
     )
+    else()
+        install(TARGETS				 DiligentFX
+                EXPORT DiligentFXTarget
+                ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}/${DILIGENT_FX_DIR}/$<CONFIG>"
+                LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}/${DILIGENT_FX_DIR}/$<CONFIG>"
+                RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}/${DILIGENT_FX_DIR}/$<CONFIG>"
+        )
+        install(EXPORT DiligentFXTarget
+                FILE DiligentFX-target.cmake
+                NAMESPACE Diligent::
+                DESTINATION lib/cmake/diligent
+        )
+    endif()
     install(DIRECTORY    PostProcess/EpipolarLightScattering/interface
             DESTINATION  "${CMAKE_INSTALL_INCLUDEDIR}/${DILIGENT_FX_DIR}/PostProcess/EpipolarLightScattering"
     )
