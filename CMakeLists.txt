@@ -136,11 +136,19 @@ if(DILIGENT_INSTALL_FX)
     install(DIRECTORY    PBR/interface
             DESTINATION  "${CMAKE_INSTALL_INCLUDEDIR}/${DILIGENT_FX_DIR}/PBR"
     )
-    install(DIRECTORY    Shaders
-            DESTINATION  "."
-            FILES_MATCHING PATTERN "public/*.*"
-            PATTERN "private" EXCLUDE
-    )
+    if (NOT (${DILIGENT_USE_VCPKG}))
+        install(DIRECTORY    Shaders
+                DESTINATION  "."
+                FILES_MATCHING PATTERN "public/*.*"
+                PATTERN "private" EXCLUDE
+        )
+    else()
+        install(DIRECTORY    Shaders
+                DESTINATION  ${CMAKE_INSTALL_INCLUDEDIR}
+                FILES_MATCHING PATTERN "public/*.*"
+                PATTERN "private" EXCLUDE
+        )
+    endif()
 endif()
 
 set_target_properties(DiligentFX PROPERTIES
