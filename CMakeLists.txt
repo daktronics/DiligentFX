@@ -117,17 +117,12 @@ source_group("generated" FILES
 
 if(DILIGENT_INSTALL_FX)
 
-if (NOT (${DILIGENT_USE_VCPKG}))
-    install(TARGETS				 DiligentFX
-            ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}/${DILIGENT_FX_DIR}/$<CONFIG>"
-            LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}/${DILIGENT_FX_DIR}/$<CONFIG>"
-            RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}/${DILIGENT_FX_DIR}/$<CONFIG>"
-    )
-    install(EXPORT DiligentFXTarget
-            FILE DiligentFX-target.cmake
-            NAMESPACE Diligent::
-            DESTINATION lib/cmake/diligent
-    )
+    if (NOT (${DILIGENT_USE_VCPKG}))
+        install(TARGETS				 DiligentFX
+                ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}/${DILIGENT_FX_DIR}/$<CONFIG>"
+                LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}/${DILIGENT_FX_DIR}/$<CONFIG>"
+                RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}/${DILIGENT_FX_DIR}/$<CONFIG>"
+        )
     else()
         install(TARGETS				 DiligentFX
                 EXPORT DiligentFXTarget
