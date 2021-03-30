@@ -10,7 +10,7 @@ set(INCLUDE
 
 target_sources(DiligentFX PRIVATE ${SOURCE} ${INCLUDE})
 
-get_target_relative_dir(Diligent-DiligentFX TARGET_RELATIVE_PATH)
+get_target_relative_dir(DiligentFX TARGET_RELATIVE_PATH)
 
 target_include_directories(DiligentFX
 PUBLIC
