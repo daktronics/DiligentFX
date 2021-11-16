@@ -116,10 +116,10 @@ GLTF_PBR_Renderer::GLTF_PBR_Renderer(IRenderDevice*    pDevice,
         // clang-format off
         StateTransitionDesc Barriers[] = 
         {
-            {pWhiteTex,         RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, true},
-            {pBlackTex,         RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, true},
-            {pDefaultNormalMap, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, true},
-            {pDefaultPhysDesc,  RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, true} 
+            {pWhiteTex,         RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE},
+            {pBlackTex,         RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE},
+            {pDefaultNormalMap, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE},
+            {pDefaultPhysDesc,  RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE}
         };
         // clang-format on
         pCtx->TransitionResourceStates(_countof(Barriers), Barriers);
@@ -135,14 +135,14 @@ GLTF_PBR_Renderer::GLTF_PBR_Renderer(IRenderDevice*    pDevice,
     {
         CreateUniformBuffer(pDevice, sizeof(GLTFNodeShaderTransforms), "GLTF node transforms CB", &m_TransformsCB);
         CreateUniformBuffer(pDevice, sizeof(GLTFMaterialShaderInfo) + sizeof(GLTFRendererShaderParameters), "GLTF attribs CB", &m_GLTFAttribsCB);
-        CreateUniformBuffer(pDevice, static_cast<Uint32>(sizeof(float4x4) * m_Settings.MaxJointCount), "GLTF joint tranforms", &m_JointsBuffer);
+        CreateUniformBuffer(pDevice, static_cast<Uint32>(sizeof(float4x4) * m_Settings.MaxJointCount), "GLTF joint transforms", &m_JointsBuffer);
 
         // clang-format off
         StateTransitionDesc Barriers[] = 
         {
-            {m_TransformsCB,  RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, true},
-            {m_GLTFAttribsCB, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, true},
-            {m_JointsBuffer,  RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, true}
+            {m_TransformsCB,  RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE},
+            {m_GLTFAttribsCB, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE},
+            {m_JointsBuffer,  RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_CONSTANT_BUFFER, STATE_TRANSITION_FLAG_UPDATE_STATE}
         };
         // clang-format on
         pCtx->TransitionResourceStates(_countof(Barriers), Barriers);
@@ -220,7 +220,7 @@ void GLTF_PBR_Renderer::PrecomputeBRDF(IRenderDevice*  pDevice,
     // clang-format off
     StateTransitionDesc Barriers[] =
     {
-        {pBRDF_LUT, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, true}
+        {pBRDF_LUT, RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE}
     };
     // clang-format on
     pCtx->TransitionResourceStates(_countof(Barriers), Barriers);
@@ -254,7 +254,7 @@ void GLTF_PBR_Renderer::CreatePSO(IRenderDevice* pDevice)
     Macros.AddShaderMacro("GLTF_PBR_USE_IBL", m_Settings.UseIBL);
     Macros.AddShaderMacro("GLTF_PBR_USE_AO", m_Settings.UseAO);
     Macros.AddShaderMacro("GLTF_PBR_USE_EMISSIVE", m_Settings.UseEmissive);
-    Macros.AddShaderMacro("USE_TEXTURE_ATLAS", m_Settings.UseTextureAtals);
+    Macros.AddShaderMacro("USE_TEXTURE_ATLAS", m_Settings.UseTextureAtlas);
     Macros.AddShaderMacro("PBR_WORKFLOW_METALLIC_ROUGHNESS", GLTF::Material::PBR_WORKFLOW_METALL_ROUGH);
     Macros.AddShaderMacro("PBR_WORKFLOW_SPECULAR_GLOSINESS", GLTF::Material::PBR_WORKFLOW_SPEC_GLOSS);
     Macros.AddShaderMacro("GLTF_ALPHA_MODE_OPAQUE", GLTF::Material::ALPHA_MODE_OPAQUE);
@@ -725,8 +725,7 @@ void GLTF_PBR_Renderer::PrecomputeCubemaps(IRenderDevice*  pDevice,
     {
         for (Uint32 face = 0; face < 6; ++face)
         {
-            TextureViewDesc RTVDesc(TEXTURE_VIEW_RENDER_TARGET, RESOURCE_DIM_TEX_2D_ARRAY);
-            RTVDesc.Name            = "RTV for irradiance cube texture";
+            TextureViewDesc RTVDesc{"RTV for irradiance cube texture", TEXTURE_VIEW_RENDER_TARGET, RESOURCE_DIM_TEX_2D_ARRAY};
             RTVDesc.MostDetailedMip = mip;
             RTVDesc.FirstArraySlice = face;
             RTVDesc.NumArraySlices  = 1;
@@ -752,8 +751,7 @@ void GLTF_PBR_Renderer::PrecomputeCubemaps(IRenderDevice*  pDevice,
     {
         for (Uint32 face = 0; face < 6; ++face)
         {
-            TextureViewDesc RTVDesc(TEXTURE_VIEW_RENDER_TARGET, RESOURCE_DIM_TEX_2D_ARRAY);
-            RTVDesc.Name            = "RTV for prefiltered env map cube texture";
+            TextureViewDesc RTVDesc{"RTV for prefiltered env map cube texture", TEXTURE_VIEW_RENDER_TARGET, RESOURCE_DIM_TEX_2D_ARRAY};
             RTVDesc.MostDetailedMip = mip;
             RTVDesc.FirstArraySlice = face;
             RTVDesc.NumArraySlices  = 1;
@@ -778,11 +776,14 @@ void GLTF_PBR_Renderer::PrecomputeCubemaps(IRenderDevice*  pDevice,
     // clang-format off
     StateTransitionDesc Barriers[] = 
     {
-        {m_pPrefilteredEnvMapSRV->GetTexture(), RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, true},
-        {m_pIrradianceCubeSRV->GetTexture(),    RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, true}
+        {m_pPrefilteredEnvMapSRV->GetTexture(), RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE},
+        {m_pIrradianceCubeSRV->GetTexture(),    RESOURCE_STATE_UNKNOWN, RESOURCE_STATE_SHADER_RESOURCE, STATE_TRANSITION_FLAG_UPDATE_STATE}
     };
     // clang-format on
     pCtx->TransitionResourceStates(_countof(Barriers), Barriers);
+
+    // To avoid crashes on some low-end Android devices
+    pCtx->Flush();
 }
 
 
@@ -839,13 +840,12 @@ void GLTF_PBR_Renderer::Begin(IRenderDevice*              pDevice,
 
     pCtx->TransitionShaderResources(pPSO, Bindings.pSRB);
 
-    std::array<Uint32, 2>   Offsets = {};
     std::array<IBuffer*, 2> pVBs =
         {
             CacheUseInfo.pResourceMgr->GetBuffer(CacheUseInfo.VertexBuffer0Idx, pDevice, pCtx),
             CacheUseInfo.pResourceMgr->GetBuffer(CacheUseInfo.VertexBuffer1Idx, pDevice, pCtx) //
         };
-    pCtx->SetVertexBuffers(0, static_cast<Uint32>(pVBs.size()), pVBs.data(), Offsets.data(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
+    pCtx->SetVertexBuffers(0, static_cast<Uint32>(pVBs.size()), pVBs.data(), nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
 
     auto* pIndexBuffer = CacheUseInfo.pResourceMgr->GetBuffer(CacheUseInfo.IndexBufferIdx, pDevice, pCtx);
     pCtx->SetIndexBuffer(pIndexBuffer, 0, RESOURCE_STATE_TRANSITION_MODE_TRANSITION);
@@ -865,13 +865,12 @@ void GLTF_PBR_Renderer::Render(IDeviceContext*        pCtx,
 
     if (pModelBindings != nullptr)
     {
-        std::array<Uint32, 2>   Offsets = {};
         std::array<IBuffer*, 2> pVBs =
             {
                 GLTFModel.GetBuffer(GLTF::Model::BUFFER_ID_VERTEX_BASIC_ATTRIBS),
                 GLTFModel.GetBuffer(GLTF::Model::BUFFER_ID_VERTEX_SKIN_ATTRIBS) //
             };
-        pCtx->SetVertexBuffers(0, static_cast<Uint32>(pVBs.size()), pVBs.data(), Offsets.data(), RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
+        pCtx->SetVertexBuffers(0, static_cast<Uint32>(pVBs.size()), pVBs.data(), nullptr, RESOURCE_STATE_TRANSITION_MODE_TRANSITION, SET_VERTEX_BUFFERS_FLAG_RESET);
 
         if (auto* pIndexBuffer = GLTFModel.GetBuffer(GLTF::Model::BUFFER_ID_INDEX))
         {
@@ -978,7 +977,7 @@ void GLTF_PBR_Renderer::Render(IDeviceContext*        pCtx,
                         GLTFRendererShaderParameters  RenderParameters;
                         GLTF::Material::ShaderAttribs MaterialInfo;
                         static_assert(sizeof(GLTFMaterialShaderInfo) == sizeof(GLTF::Material::ShaderAttribs),
-                                      "The sizeof(GLTFMaterialShaderInfo) is incosistent with sizeof(GLTF::Material::ShaderAttribs)");
+                                      "The sizeof(GLTFMaterialShaderInfo) is inconsistent with sizeof(GLTF::Material::ShaderAttribs)");
                     };
                     static_assert(sizeof(GLTFAttribs) <= 256, "Size of dynamic GLTFAttribs buffer exceeds 256 bytes. "
                                                               "It may be worth trying to reduce the size or just live with it.");

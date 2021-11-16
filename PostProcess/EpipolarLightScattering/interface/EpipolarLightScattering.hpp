@@ -151,7 +151,6 @@ private:
 
     const TEXTURE_FORMAT m_BackBufferFmt;
     const TEXTURE_FORMAT m_DepthBufferFmt;
-    const TEXTURE_FORMAT m_OffscreenBackBufferFmt;
 
     static constexpr TEXTURE_FORMAT PrecomputedNetDensityTexFmt = TEX_FORMAT_RG32_FLOAT;
     static constexpr TEXTURE_FORMAT CoordinateTexFmt            = TEX_FORMAT_RG32_FLOAT;
@@ -262,7 +261,7 @@ private:
                                         IShader*                          ComputeShader,
                                         const PipelineResourceLayoutDesc& ResourceLayout);
 
-        void PrepareSRB(IRenderDevice* pDevice, IResourceMapping* pResMapping, Uint32 Flags);
+        void PrepareSRB(IRenderDevice* pDevice, IResourceMapping* pResMapping, BIND_SHADER_RESOURCES_FLAGS Flags);
 
         void Render(IDeviceContext* pDeviceContext, Uint8 StencilRef = 0, Uint32 NumQuads = 1);
 
