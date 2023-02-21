@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2021 Diligent Graphics LLC
+ *  Copyright 2019-2022 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *  
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,6 +32,7 @@
 #include "../../../DiligentCore/Graphics/GraphicsEngine/interface/DeviceContext.h"
 #include "../../../DiligentCore/Graphics/GraphicsEngine/interface/Texture.h"
 #include "../../../DiligentCore/Graphics/GraphicsEngine/interface/TextureView.h"
+#include "../../../DiligentCore/Graphics/GraphicsTools/interface/RenderStateCache.h"
 #include "../../../DiligentCore/Common/interface/RefCntAutoPtr.hpp"
 #include "../../../DiligentCore/Common/interface/BasicMath.hpp"
 
@@ -71,7 +72,7 @@ public:
         /// Optional sampler to be set in the filterable shadow map representation
         ISampler*      pFilterableShadowMapSampler = nullptr;
     };
-    void Initialize(IRenderDevice* pDevice, const InitInfo& initInfo);
+    void Initialize(IRenderDevice* pDevice, IRenderStateCache* pStateCache, const InitInfo& initInfo);
 
     ITextureView* GetSRV()                     { return m_pShadowMapSRV;           }
     ITextureView* GetCascadeDSV(Uint32 Cascade){ return m_pShadowMapDSVs[Cascade]; }
@@ -133,6 +134,7 @@ private:
 
     int                                      m_ShadowMode = 0;
     RefCntAutoPtr<IRenderDevice>             m_pDevice;
+    RefCntAutoPtr<IRenderStateCache>         m_pStateCache;
     RefCntAutoPtr<ITextureView>              m_pShadowMapSRV;
     std::vector<RefCntAutoPtr<ITextureView>> m_pShadowMapDSVs;
     RefCntAutoPtr<ITextureView>              m_pFilterableShadowMapSRV;

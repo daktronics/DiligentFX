@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019-2021 Diligent Graphics LLC
+ *  Copyright 2019-2022 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
  *  
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,18 +34,26 @@
 namespace Diligent
 {
 
+DiligentFXShaderSourceStreamFactory::NameToSourceMapType DiligentFXShaderSourceStreamFactory::InitNameToSourceMap()
+{
+    NameToSourceMapType NameToSourceMap;
+    for (size_t i = 0; i < _countof(g_Shaders); ++i)
+    {
+        NameToSourceMap.emplace(g_Shaders[i].FileName, g_Shaders[i].Source);
+    }
+    return NameToSourceMap;
+}
+
 DiligentFXShaderSourceStreamFactory& DiligentFXShaderSourceStreamFactory::GetInstance()
 {
     static DiligentFXShaderSourceStreamFactory TheFactory;
     return TheFactory;
 }
 
-DiligentFXShaderSourceStreamFactory::DiligentFXShaderSourceStreamFactory()
+DiligentFXShaderSourceStreamFactory::DiligentFXShaderSourceStreamFactory() :
+    m_RefCounters{*this},
+    m_NameToSourceMap{InitNameToSourceMap()}
 {
-    for (size_t i = 0; i < _countof(g_Shaders); ++i)
-    {
-        m_NameToSourceMap.emplace(g_Shaders[i].FileName, g_Shaders[i].Source);
-    }
 }
 
 void DiligentFXShaderSourceStreamFactory::CreateInputStream(const Char*   Name,

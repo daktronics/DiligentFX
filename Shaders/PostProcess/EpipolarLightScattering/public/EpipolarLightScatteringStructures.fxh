@@ -204,7 +204,7 @@ struct EpipolarLightScatteringAttribs
     BOOL   bIsLightOnScreen                 DEFAULT_VALUE(FALSE);
     float  fNumCascades                     DEFAULT_VALUE(0);
     float  fFirstCascadeToRayMarch          DEFAULT_VALUE(0);
-    int    Padding0;
+    int    Padding0                         DEFAULT_VALUE(0);
 };
 #ifdef CHECK_STRUCT_ALIGNMENT
     CHECK_STRUCT_ALIGNMENT(EpipolarLightScatteringAttribs);
@@ -234,7 +234,7 @@ struct AirScatteringAttribs
                    // y == 1 + g^2
                    // z == -2*g
 
-    // Earth parameters can't be chnaged at run time
+    // Earth parameters can't be changed at run time
     float fEarthRadius              DEFAULT_VALUE(static_cast<float>(EARTH_RADIUS));
     float fAtmBottomAltitude        DEFAULT_VALUE(0.f);     // Altitude of the bottom atmosphere boundary (sea level by default)
     float fAtmTopAltitude           DEFAULT_VALUE(80000.f); // Altitude of the top atmosphere boundary, 80 km by default
