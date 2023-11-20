@@ -1,27 +1,27 @@
 /*
  *  Copyright 2019-2022 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
- *  
+ *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *  
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  *
- *  In no event and under no legal theory, whether in tort (including negligence), 
- *  contract, or otherwise, unless required by applicable law (such as deliberate 
+ *  In no event and under no legal theory, whether in tort (including negligence),
+ *  contract, or otherwise, unless required by applicable law (such as deliberate
  *  and grossly negligent acts) or agreed to in writing, shall any Contributor be
- *  liable for any damages, including any direct, indirect, special, incidental, 
- *  or consequential damages of any character arising as a result of this License or 
- *  out of the use or inability to use the software (including but not limited to damages 
- *  for loss of goodwill, work stoppage, computer failure or malfunction, or any and 
- *  all other commercial damages or losses), even if such Contributor has been advised 
+ *  liable for any damages, including any direct, indirect, special, incidental,
+ *  or consequential damages of any character arising as a result of this License or
+ *  out of the use or inability to use the software (including but not limited to damages
+ *  for loss of goodwill, work stoppage, computer failure or malfunction, or any and
+ *  all other commercial damages or losses), even if such Contributor has been advised
  *  of the possibility of such damages.
  */
 
@@ -283,12 +283,12 @@ void EpipolarLightScattering::RenderTechnique::CheckStaleFlags(Uint32 StalePSODe
     }
 }
 
-static RefCntAutoPtr<IShader> CreateShader(IRenderDevice*     pDevice,
-                                           IRenderStateCache* pStateCache,
-                                           const Char*        FileName,
-                                           const Char*        EntryPoint,
-                                           SHADER_TYPE        Type,
-                                           const ShaderMacro* Macros = nullptr)
+static RefCntAutoPtr<IShader> CreateShader(IRenderDevice*          pDevice,
+                                           IRenderStateCache*      pStateCache,
+                                           const Char*             FileName,
+                                           const Char*             EntryPoint,
+                                           SHADER_TYPE             Type,
+                                           const ShaderMacroArray& Macros = {})
 {
     ShaderCreateInfo ShaderCI;
     ShaderCI.EntryPoint                      = EntryPoint;
@@ -324,7 +324,7 @@ EpipolarLightScattering::EpipolarLightScattering(IRenderDevice*              pDe
     m_MediaParams.fAtmBottomRadius     = m_MediaParams.fEarthRadius + m_MediaParams.fAtmBottomAltitude;
     m_MediaParams.fAtmAltitudeRangeInv = 1.f / (m_MediaParams.fAtmTopAltitude - m_MediaParams.fAtmBottomAltitude);
 
-    pDevice->CreateResourceMapping(ResourceMappingDesc(), &m_pResMapping);
+    pDevice->CreateResourceMapping(ResourceMappingCreateInfo{}, &m_pResMapping);
     const auto AdapterType = pDevice->GetAdapterInfo().Type;
     if (AdapterType == ADAPTER_TYPE_SOFTWARE || AdapterType == ADAPTER_TYPE_INTEGRATED)
     {
@@ -657,7 +657,6 @@ void EpipolarLightScattering::PrecomputeScatteringLUT(IRenderDevice* pDevice, IR
         ShaderMacroHelper Macros;
         DefineMacros(Macros);
         Macros.AddShaderMacro("THREAD_GROUP_SIZE", ThreadGroupSize);
-        Macros.Finalize();
         auto pPrecomputeSingleSctrCS =
             CreateShader(pDevice, pStateCache, "PrecomputeSingleScattering.fx", "PrecomputeSingleScatteringCS",
                          SHADER_TYPE_COMPUTE, Macros);
@@ -674,7 +673,6 @@ void EpipolarLightScattering::PrecomputeScatteringLUT(IRenderDevice* pDevice, IR
         DefineMacros(Macros);
         Macros.AddShaderMacro("THREAD_GROUP_SIZE", ThreadGroupSize);
         Macros.AddShaderMacro("NUM_RANDOM_SPHERE_SAMPLES", static_cast<Int32>(m_uiNumRandomSamplesOnSphere));
-        Macros.Finalize();
         auto pComputeSctrRadianceCS =
             CreateShader(pDevice, pStateCache, "ComputeSctrRadiance.fx", "ComputeSctrRadianceCS",
                          SHADER_TYPE_COMPUTE, Macros);
@@ -690,7 +688,6 @@ void EpipolarLightScattering::PrecomputeScatteringLUT(IRenderDevice* pDevice, IR
         ShaderMacroHelper Macros;
         DefineMacros(Macros);
         Macros.AddShaderMacro("THREAD_GROUP_SIZE", ThreadGroupSize);
-        Macros.Finalize();
         auto pComputeScatteringOrderCS =
             CreateShader(pDevice, pStateCache, "ComputeScatteringOrder.fx", "ComputeScatteringOrderCS",
                          SHADER_TYPE_COMPUTE, Macros);
@@ -706,7 +703,6 @@ void EpipolarLightScattering::PrecomputeScatteringLUT(IRenderDevice* pDevice, IR
         ShaderMacroHelper Macros;
         DefineMacros(Macros);
         Macros.AddShaderMacro("THREAD_GROUP_SIZE", ThreadGroupSize);
-        Macros.Finalize();
         auto pInitHighOrderScatteringCS =
             CreateShader(pDevice, pStateCache, "InitHighOrderScattering.fx", "InitHighOrderScatteringCS",
                          SHADER_TYPE_COMPUTE, Macros);
@@ -722,7 +718,6 @@ void EpipolarLightScattering::PrecomputeScatteringLUT(IRenderDevice* pDevice, IR
         ShaderMacroHelper Macros;
         DefineMacros(Macros);
         Macros.AddShaderMacro("THREAD_GROUP_SIZE", ThreadGroupSize);
-        Macros.Finalize();
         auto pUpdateHighOrderScatteringCS =
             CreateShader(pDevice, pStateCache, "UpdateHighOrderScattering.fx", "UpdateHighOrderScatteringCS",
                          SHADER_TYPE_COMPUTE, Macros);
@@ -738,7 +733,6 @@ void EpipolarLightScattering::PrecomputeScatteringLUT(IRenderDevice* pDevice, IR
         ShaderMacroHelper Macros;
         DefineMacros(Macros);
         Macros.AddShaderMacro("THREAD_GROUP_SIZE", ThreadGroupSize);
-        Macros.Finalize();
         auto pCombineScatteringOrdersCS =
             CreateShader(pDevice, pStateCache, "CombineScatteringOrders.fx", "CombineScatteringOrdersCS",
                          SHADER_TYPE_COMPUTE, Macros);
@@ -968,7 +962,6 @@ void EpipolarLightScattering::ReconstructCameraSpaceZ()
     {
         ShaderMacroHelper Macros;
         DefineMacros(Macros);
-        Macros.Finalize();
         auto pReconstrCamSpaceZPS =
             CreateShader(m_FrameAttribs.pDevice, m_FrameAttribs.pStateCache, "ReconstructCameraSpaceZ.fx", "ReconstructCameraSpaceZPS",
                          SHADER_TYPE_PIXEL, Macros);
@@ -998,7 +991,6 @@ void EpipolarLightScattering::RenderSliceEndpoints()
     {
         ShaderMacroHelper Macros;
         DefineMacros(Macros);
-        Macros.Finalize();
 
         auto pRendedSliceEndpointsPS =
             CreateShader(m_FrameAttribs.pDevice, m_FrameAttribs.pStateCache,
@@ -1034,7 +1026,7 @@ void EpipolarLightScattering::RenderCoordinateTexture()
     {
         ShaderMacroHelper Macros;
         DefineMacros(Macros);
-        Macros.Finalize();
+
         auto pRendedCoordTexPS = CreateShader(
             m_FrameAttribs.pDevice, m_FrameAttribs.pStateCache,
             "RenderCoordinateTexture.fx", "GenerateCoordinateTexturePS",
@@ -1084,7 +1076,7 @@ void EpipolarLightScattering::RenderCoarseUnshadowedInctr()
     {
         ShaderMacroHelper Macros;
         DefineMacros(Macros);
-        Macros.Finalize();
+
         auto EntryPoint =
             m_PostProcessingAttribs.iExtinctionEvalMode == EXTINCTION_EVAL_MODE_EPIPOLAR ?
             "RenderCoarseUnshadowedInsctrAndExtinctionPS" :
@@ -1202,7 +1194,6 @@ void EpipolarLightScattering::RefineSampleLocations()
         Macros.AddShaderMacro("REFINEMENT_CRITERION", m_PostProcessingAttribs.iRefinementCriterion);
         Macros.AddShaderMacro("AUTO_EXPOSURE",        m_PostProcessingAttribs.ToneMapping.bAutoExposure);
         // clang-format on
-        Macros.Finalize();
 
         auto pRefineSampleLocationsCS = CreateShader(m_FrameAttribs.pDevice, m_FrameAttribs.pStateCache, "RefineSampleLocations.fx", "RefineSampleLocationsCS",
                                                      SHADER_TYPE_COMPUTE, Macros);
@@ -1247,7 +1238,6 @@ void EpipolarLightScattering::MarkRayMarchingSamples()
     {
         ShaderMacroHelper Macros;
         DefineMacros(Macros);
-        Macros.Finalize();
 
         auto pMarkRayMarchingSamplesInStencilPS =
             CreateShader(m_FrameAttribs.pDevice, m_FrameAttribs.pStateCache,
@@ -1282,7 +1272,6 @@ void EpipolarLightScattering::RenderSliceUVDirAndOrig()
     {
         ShaderMacroHelper Macros;
         DefineMacros(Macros);
-        Macros.Finalize();
 
         auto pRenderSliceUVDirInSMPS =
             CreateShader(m_FrameAttribs.pDevice, m_FrameAttribs.pStateCache,
@@ -1331,7 +1320,6 @@ void EpipolarLightScattering::Build1DMinMaxMipMap(int iCascadeIndex)
         ShaderMacroHelper Macros;
         DefineMacros(Macros);
         Macros.AddShaderMacro("IS_32BIT_MIN_MAX_MAP", m_PostProcessingAttribs.bIs32BitMinMaxMipMap);
-        Macros.Finalize();
 
         auto pInitializeMinMaxShadowMapPS = CreateShader(
             m_FrameAttribs.pDevice, m_FrameAttribs.pStateCache,
@@ -1377,7 +1365,6 @@ void EpipolarLightScattering::Build1DMinMaxMipMap(int iCascadeIndex)
     {
         ShaderMacroHelper Macros;
         DefineMacros(Macros);
-        Macros.Finalize();
 
         auto pComputeMinMaxSMLevelPS = CreateShader(
             m_FrameAttribs.pDevice, m_FrameAttribs.pStateCache,
@@ -1506,7 +1493,6 @@ void EpipolarLightScattering::DoRayMarching(Uint32 uiMaxStepsAlongRay,
         DefineMacros(Macros);
         Macros.AddShaderMacro("CASCADE_PROCESSING_MODE", m_PostProcessingAttribs.iCascadeProcessingMode);
         Macros.AddShaderMacro("USE_1D_MIN_MAX_TREE", m_PostProcessingAttribs.bUse1DMinMaxTree);
-        Macros.Finalize();
 
         auto pDoRayMarchPS =
             CreateShader(m_FrameAttribs.pDevice, m_FrameAttribs.pStateCache, "RayMarch.fx", "RayMarchPS", SHADER_TYPE_PIXEL, Macros);
@@ -1627,7 +1613,6 @@ void EpipolarLightScattering::InterpolateInsctrIrradiance()
     {
         ShaderMacroHelper Macros;
         DefineMacros(Macros);
-        Macros.Finalize();
 
         auto pInterpolateIrradiancePS = CreateShader(
             m_FrameAttribs.pDevice, m_FrameAttribs.pStateCache,
@@ -1681,7 +1666,6 @@ void EpipolarLightScattering::UnwarpEpipolarScattering(bool bRenderLuminance)
         Macros.AddShaderMacro("TONE_MAPPING_MODE",                    m_PostProcessingAttribs.ToneMapping.iToneMappingMode);
         Macros.AddShaderMacro("CORRECT_INSCATTERING_AT_DEPTH_BREAKS", m_PostProcessingAttribs.bCorrectScatteringAtDepthBreaks);
         // clang-format on
-        Macros.Finalize();
 
         auto pUnwarpEpipolarSctrImgPS = CreateShader(
             m_FrameAttribs.pDevice, m_FrameAttribs.pStateCache,
@@ -1737,7 +1721,6 @@ void EpipolarLightScattering::UnwarpEpipolarScattering(bool bRenderLuminance)
         Macros.AddShaderMacro("PERFORM_TONE_MAPPING", false);
         // No inscattering correction - we need to render the entire image in low resolution
         Macros.AddShaderMacro("CORRECT_INSCATTERING_AT_DEPTH_BREAKS", false);
-        Macros.Finalize();
 
         auto pUnwarpAndRenderLuminancePS = CreateShader(
             m_FrameAttribs.pDevice, m_FrameAttribs.pStateCache,
@@ -1812,7 +1795,6 @@ void EpipolarLightScattering::UpdateAverageLuminance()
         // static_cast<int>() is required because Run() gets its arguments by reference
         // and gcc will try to find reference to sm_iLowResLuminanceMips, which does not exist
         Macros.AddShaderMacro("LOW_RES_LUMINANCE_MIPS", static_cast<int>(sm_iLowResLuminanceMips));
-        Macros.Finalize();
 
         auto pUpdateAverageLuminancePS = CreateShader(
             m_FrameAttribs.pDevice, m_FrameAttribs.pStateCache,
@@ -1872,7 +1854,6 @@ void EpipolarLightScattering::FixInscatteringAtDepthBreaks(Uint32               
         Macros.AddShaderMacro("TONE_MAPPING_MODE",       m_PostProcessingAttribs.ToneMapping.iToneMappingMode);
         Macros.AddShaderMacro("USE_1D_MIN_MAX_TREE",     false);
         // clang-format on
-        Macros.Finalize();
 
         auto pFixInsctrAtDepthBreaksPS = CreateShader(
             m_FrameAttribs.pDevice, m_FrameAttribs.pStateCache,
@@ -2001,7 +1982,6 @@ void EpipolarLightScattering::RenderSampleLocations()
     {
         ShaderMacroHelper Macros;
         DefineMacros(Macros);
-        Macros.Finalize();
 
         auto pRenderSampleLocationsVS = CreateShader(
             m_FrameAttribs.pDevice, m_FrameAttribs.pStateCache,
@@ -2117,46 +2097,53 @@ void EpipolarLightScattering::PrepareForNewFrame(FrameAttribs&                  
     DEV_CHECK_ERR(frameAttribs.ptex2DSrcColorBufferSRV, "Source color buffer SRV must not be null");
     DEV_CHECK_ERR(frameAttribs.ptex2DSrcDepthBufferSRV, "Source depth buffer SRV must not be null");
     DEV_CHECK_ERR(frameAttribs.ptex2DDstColorBufferRTV, "Destination color buffer RTV must not be null");
-    DEV_CHECK_ERR(frameAttribs.ptex2DDstDepthBufferDSV, "Source depth buffer DSV must not be null");
-    DEV_CHECK_ERR(frameAttribs.ptex2DShadowMapSRV, "Shadow map SRV must not be null");
+    DEV_CHECK_ERR(frameAttribs.ptex2DDstDepthBufferDSV, "Destination depth buffer DSV must not be null");
+    DEV_CHECK_ERR(frameAttribs.ptex2DShadowMapSRV || !PPAttribs.bEnableLightShafts, "Shadow map SRV must not be null");
 
-    DEV_CHECK_ERR(PPAttribs.uiNumEpipolarSlices > 0, "Number of epipolar slices must not be 0");
-    DEV_CHECK_ERR(PPAttribs.uiMaxSamplesInSlice > 0, "Max samples in slice must not be 0");
-    DEV_CHECK_ERR(PPAttribs.uiInitialSampleStepInSlice > 0, "Initial sample step in slice must not be 0");
-    DEV_CHECK_ERR(IsPowerOfTwo(PPAttribs.uiInitialSampleStepInSlice), "Initial sample step in slice (", PPAttribs.uiInitialSampleStepInSlice, ") must be power of two");
-    DEV_CHECK_ERR(PPAttribs.uiEpipoleSamplingDensityFactor > 0, "Epipole sampling density factor must not be 0");
-    DEV_CHECK_ERR(IsPowerOfTwo(PPAttribs.uiEpipoleSamplingDensityFactor), "Epipole sampling desity factor (", PPAttribs.uiEpipoleSamplingDensityFactor, ") must be power of two");
-    DEV_CHECK_ERR(PPAttribs.uiInstrIntegralSteps > 0, "Inscattering integral steps must not be 0");
-    DEV_CHECK_ERR(PPAttribs.f2ShadowMapTexelSize.x != 0 && PPAttribs.f2ShadowMapTexelSize.y != 0, "Shadow map texel size must not be 0");
-    DEV_CHECK_ERR(PPAttribs.uiMaxSamplesOnTheRay != 0, "Max samples on the ray must not be 0");
-    DEV_CHECK_ERR(!PPAttribs.bCorrectScatteringAtDepthBreaks || PPAttribs.uiNumSamplesOnTheRayAtDepthBreak != 0, "Num samples on the ray at depth correction pass must not be 0");
-    DEV_CHECK_ERR(PPAttribs.uiMinMaxShadowMapResolution != 0, "Minmax shadow map resolution must not be 0");
-    DEV_CHECK_ERR(PPAttribs.iNumCascades != 0, "Num cascades must not be 0");
-    DEV_CHECK_ERR(PPAttribs.iFirstCascadeToRayMarch < PPAttribs.iNumCascades, "First cascade to ray march (", PPAttribs.fFirstCascadeToRayMarch, ") is invalid");
-    DEV_CHECK_ERR(PPAttribs.fMaxShadowMapStep != 0, "Max shadow map step must not be 0");
-    // clang-format off
-    DEV_CHECK_ERR(PPAttribs.iLightSctrTechnique == LIGHT_SCTR_TECHNIQUE_EPIPOLAR_SAMPLING ||
-                  PPAttribs.iLightSctrTechnique == LIGHT_SCTR_TECHNIQUE_BRUTE_FORCE,
+    DEV_CHECK_ERR((PPAttribs.iLightSctrTechnique == LIGHT_SCTR_TECHNIQUE_EPIPOLAR_SAMPLING ||
+                   PPAttribs.iLightSctrTechnique == LIGHT_SCTR_TECHNIQUE_BRUTE_FORCE),
                   "Incorrect light scattering technique (", PPAttribs.iLightSctrTechnique, ")");
-    DEV_CHECK_ERR(PPAttribs.iCascadeProcessingMode == CASCADE_PROCESSING_MODE_SINGLE_PASS ||
-                  PPAttribs.iCascadeProcessingMode == CASCADE_PROCESSING_MODE_MULTI_PASS ||
-                  PPAttribs.iCascadeProcessingMode == CASCADE_PROCESSING_MODE_MULTI_PASS_INST,
+    DEV_CHECK_ERR((PPAttribs.iCascadeProcessingMode == CASCADE_PROCESSING_MODE_SINGLE_PASS ||
+                   PPAttribs.iCascadeProcessingMode == CASCADE_PROCESSING_MODE_MULTI_PASS ||
+                   PPAttribs.iCascadeProcessingMode == CASCADE_PROCESSING_MODE_MULTI_PASS_INST),
                   "Incorrect cascade processing mode (", PPAttribs.iCascadeProcessingMode, ")");
-    DEV_CHECK_ERR(PPAttribs.iRefinementCriterion == REFINEMENT_CRITERION_DEPTH_DIFF ||
-                  PPAttribs.iRefinementCriterion == REFINEMENT_CRITERION_INSCTR_DIFF,
+    DEV_CHECK_ERR((PPAttribs.iRefinementCriterion == REFINEMENT_CRITERION_DEPTH_DIFF ||
+                   PPAttribs.iRefinementCriterion == REFINEMENT_CRITERION_INSCTR_DIFF),
                   "Incorrect refinement criterion (", PPAttribs.iRefinementCriterion, ")");
-    DEV_CHECK_ERR(PPAttribs.iSingleScatteringMode == SINGLE_SCTR_MODE_NONE ||
-                  PPAttribs.iSingleScatteringMode == SINGLE_SCTR_MODE_INTEGRATION ||
-                  PPAttribs.iSingleScatteringMode == SINGLE_SCTR_MODE_LUT,
+    DEV_CHECK_ERR((PPAttribs.iSingleScatteringMode == SINGLE_SCTR_MODE_NONE ||
+                   PPAttribs.iSingleScatteringMode == SINGLE_SCTR_MODE_INTEGRATION ||
+                   PPAttribs.iSingleScatteringMode == SINGLE_SCTR_MODE_LUT),
                   "Incorrect single scattering mode (", PPAttribs.iSingleScatteringMode, ")");
-    DEV_CHECK_ERR(PPAttribs.iMultipleScatteringMode == MULTIPLE_SCTR_MODE_NONE ||
-                  PPAttribs.iMultipleScatteringMode == MULTIPLE_SCTR_MODE_UNOCCLUDED ||
-                  PPAttribs.iMultipleScatteringMode == MULTIPLE_SCTR_MODE_OCCLUDED,
+    DEV_CHECK_ERR((PPAttribs.iMultipleScatteringMode == MULTIPLE_SCTR_MODE_NONE ||
+                   PPAttribs.iMultipleScatteringMode == MULTIPLE_SCTR_MODE_UNOCCLUDED ||
+                   PPAttribs.iMultipleScatteringMode == MULTIPLE_SCTR_MODE_OCCLUDED),
                   "Incorrect multiple scattering mode (", PPAttribs.iMultipleScatteringMode, ")");
-    DEV_CHECK_ERR(PPAttribs.iExtinctionEvalMode == EXTINCTION_EVAL_MODE_PER_PIXEL ||
-                  PPAttribs.iExtinctionEvalMode == EXTINCTION_EVAL_MODE_EPIPOLAR,
+    DEV_CHECK_ERR((PPAttribs.iExtinctionEvalMode == EXTINCTION_EVAL_MODE_PER_PIXEL ||
+                   PPAttribs.iExtinctionEvalMode == EXTINCTION_EVAL_MODE_EPIPOLAR),
                   "Incorrect extinction evaluation mode (", PPAttribs.iExtinctionEvalMode, ")");
-    
+
+    if (PPAttribs.iLightSctrTechnique == LIGHT_SCTR_TECHNIQUE_EPIPOLAR_SAMPLING)
+    {
+        DEV_CHECK_ERR(PPAttribs.uiNumEpipolarSlices > 0, "Number of epipolar slices must not be 0");
+        DEV_CHECK_ERR(PPAttribs.uiMaxSamplesInSlice > 0, "Max samples in slice must not be 0");
+        DEV_CHECK_ERR(PPAttribs.uiInitialSampleStepInSlice > 0, "Initial sample step in slice must not be 0");
+        DEV_CHECK_ERR(IsPowerOfTwo(PPAttribs.uiInitialSampleStepInSlice), "Initial sample step in slice (", PPAttribs.uiInitialSampleStepInSlice, ") must be power of two");
+        DEV_CHECK_ERR(PPAttribs.uiEpipoleSamplingDensityFactor > 0, "Epipole sampling density factor must not be 0");
+        DEV_CHECK_ERR(IsPowerOfTwo(PPAttribs.uiEpipoleSamplingDensityFactor), "Epipole sampling desity factor (", PPAttribs.uiEpipoleSamplingDensityFactor, ") must be power of two");
+        DEV_CHECK_ERR(PPAttribs.uiMaxSamplesOnTheRay != 0, "Max samples on the ray must not be 0");
+        DEV_CHECK_ERR(!PPAttribs.bCorrectScatteringAtDepthBreaks || PPAttribs.uiNumSamplesOnTheRayAtDepthBreak != 0, "Num samples on the ray at depth correction pass must not be 0");
+    }
+    DEV_CHECK_ERR(PPAttribs.uiInstrIntegralSteps > 0, "Inscattering integral steps must not be 0");
+    if (PPAttribs.bEnableLightShafts)
+    {
+        DEV_CHECK_ERR(PPAttribs.f2ShadowMapTexelSize.x != 0 && PPAttribs.f2ShadowMapTexelSize.y != 0, "Shadow map texel size must not be 0");
+        DEV_CHECK_ERR(PPAttribs.uiMinMaxShadowMapResolution != 0, "Minmax shadow map resolution must not be 0");
+        DEV_CHECK_ERR(PPAttribs.iNumCascades != 0, "Num cascades must not be 0");
+        DEV_CHECK_ERR(PPAttribs.fMaxShadowMapStep != 0, "Max shadow map step must not be 0");
+        DEV_CHECK_ERR(PPAttribs.iFirstCascadeToRayMarch < PPAttribs.iNumCascades, "First cascade to ray march (", PPAttribs.fFirstCascadeToRayMarch, ") is invalid");
+    }
+    // clang-format off
+
     Uint32 StalePSODependencyFlags = 0;
 #define CHECK_PSO_DEPENDENCY(Flag, Member)StalePSODependencyFlags |= (PPAttribs.Member != m_PostProcessingAttribs.Member) ? Flag : 0
     CHECK_PSO_DEPENDENCY(PSO_DEPENDENCY_INITIAL_SAMPLE_STEP,        uiInitialSampleStepInSlice);
@@ -2191,7 +2178,7 @@ void EpipolarLightScattering::PrepareForNewFrame(FrameAttribs&                  
     NewUserResourceIds.CameraAttribs     = pcbLightAttribs  != nullptr ? pcbLightAttribs->GetUniqueID()  : -1;
     NewUserResourceIds.SrcColorBufferSRV = frameAttribs.ptex2DSrcColorBufferSRV->GetUniqueID();
     NewUserResourceIds.SrcDepthBufferSRV = frameAttribs.ptex2DSrcDepthBufferSRV->GetUniqueID();
-    NewUserResourceIds.ShadowMapSRV      = frameAttribs.ptex2DShadowMapSRV->GetUniqueID();
+    NewUserResourceIds.ShadowMapSRV      = frameAttribs.ptex2DShadowMapSRV ? frameAttribs.ptex2DShadowMapSRV->GetUniqueID() : -1;
     // clang-format on
 
     Uint32 StaleSRBDependencyFlags = 0;
@@ -2359,24 +2346,27 @@ void EpipolarLightScattering::PrepareForNewFrame(FrameAttribs&                  
         ComputeScatteringCoefficients(m_FrameAttribs.pDeviceContext);
     }
 
-    if (!m_ptex2DCoordinateTextureRTV)
-    {
-        CreateEpipolarTextures(m_FrameAttribs.pDevice);
-    }
-
-    if (!m_ptex2DSliceEndpointsRTV)
-    {
-        CreateSliceEndPointsTexture(m_FrameAttribs.pDevice);
-    }
-
     if (!m_ptex2DCamSpaceZRTV)
     {
         CreateCamSpaceZTexture(m_FrameAttribs.pDevice);
     }
 
-    if (m_PostProcessingAttribs.bEnableLightShafts && m_PostProcessingAttribs.bUse1DMinMaxTree && !m_ptex2DMinMaxShadowMapSRV[0])
+    if (PPAttribs.iLightSctrTechnique == LIGHT_SCTR_TECHNIQUE_EPIPOLAR_SAMPLING)
     {
-        CreateMinMaxShadowMap(m_FrameAttribs.pDevice);
+        if (!m_ptex2DCoordinateTextureRTV)
+        {
+            CreateEpipolarTextures(m_FrameAttribs.pDevice);
+        }
+
+        if (!m_ptex2DSliceEndpointsRTV)
+        {
+            CreateSliceEndPointsTexture(m_FrameAttribs.pDevice);
+        }
+
+        if (m_PostProcessingAttribs.bEnableLightShafts && m_PostProcessingAttribs.bUse1DMinMaxTree && !m_ptex2DMinMaxShadowMapSRV[0])
+        {
+            CreateMinMaxShadowMap(m_FrameAttribs.pDevice);
+        }
     }
 
     {
@@ -2384,11 +2374,10 @@ void EpipolarLightScattering::PrepareForNewFrame(FrameAttribs&                  
         memcpy(pPPAttribsBuffData, &m_PostProcessingAttribs, sizeof(m_PostProcessingAttribs));
     }
 
-    // clang-format off
-    m_pResMapping->AddResource("g_tex2DLightSpaceDepthMap", m_FrameAttribs.ptex2DShadowMapSRV, false);
-    m_pResMapping->AddResource("cbCameraAttribs",           m_FrameAttribs.pcbCameraAttribs, false);
-    m_pResMapping->AddResource("cbLightParams",             m_FrameAttribs.pcbLightAttribs, false);
-    // clang-format on
+    if (m_FrameAttribs.ptex2DShadowMapSRV)
+        m_pResMapping->AddResource("g_tex2DLightSpaceDepthMap", m_FrameAttribs.ptex2DShadowMapSRV, false);
+    m_pResMapping->AddResource("cbCameraAttribs", m_FrameAttribs.pcbCameraAttribs, false);
+    m_pResMapping->AddResource("cbLightParams", m_FrameAttribs.pcbLightAttribs, false);
 }
 
 void EpipolarLightScattering::PerformPostProcessing()
@@ -2875,7 +2864,7 @@ void EpipolarLightScattering::ComputeAmbientSkyLightTexture(IRenderDevice* pDevi
     {
         ShaderMacroHelper Macros;
         Macros.AddShaderMacro("NUM_RANDOM_SPHERE_SAMPLES", static_cast<Int32>(m_uiNumRandomSamplesOnSphere));
-        Macros.Finalize();
+
         auto pPrecomputeAmbientSkyLightPS = CreateShader(pDevice, pStateCache, "PrecomputeAmbientSkyLight.fx", "PrecomputeAmbientSkyLightPS",
                                                          SHADER_TYPE_PIXEL, Macros);
 

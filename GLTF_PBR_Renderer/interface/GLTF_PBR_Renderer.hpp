@@ -1,27 +1,27 @@
 /*
  *  Copyright 2019-2022 Diligent Graphics LLC
  *  Copyright 2015-2019 Egor Yusov
- *  
+ *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *  
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  *
- *  In no event and under no legal theory, whether in tort (including negligence), 
- *  contract, or otherwise, unless required by applicable law (such as deliberate 
+ *  In no event and under no legal theory, whether in tort (including negligence),
+ *  contract, or otherwise, unless required by applicable law (such as deliberate
  *  and grossly negligent acts) or agreed to in writing, shall any Contributor be
- *  liable for any damages, including any direct, indirect, special, incidental, 
- *  or consequential damages of any character arising as a result of this License or 
- *  out of the use or inability to use the software (including but not limited to damages 
- *  for loss of goodwill, work stoppage, computer failure or malfunction, or any and 
- *  all other commercial damages or losses), even if such Contributor has been advised 
+ *  liable for any damages, including any direct, indirect, special, incidental,
+ *  or consequential damages of any character arising as a result of this License or
+ *  out of the use or inability to use the software (including but not limited to damages
+ *  for loss of goodwill, work stoppage, computer failure or malfunction, or any and
+ *  all other commercial damages or losses), even if such Contributor has been advised
  *  of the possibility of such damages.
  */
 
@@ -103,6 +103,9 @@ public:
 
         /// Maximum number of joints
         Uint32 MaxJointCount = 64;
+
+        /// Number of samples for BRDF LUT creation
+        Uint32 NumBRDFSamples = 512;
     };
 
     /// Initializes the renderer
@@ -114,6 +117,9 @@ public:
     /// Rendering information
     struct RenderInfo
     {
+        /// Index of the scene to render
+        Uint32 SceneIndex = 0;
+
         /// Model transform matrix
         float4x4 ModelTransform = float4x4::Identity();
 
@@ -204,15 +210,17 @@ public:
 
     /// \param [in] pCtx           - Device context to record rendering commands to.
     /// \param [in] GLTFModel      - GLTF model to render.
+    /// \param [in] Transforms     - The model transforms.
     /// \param [in] RenderParams   - Render parameters.
     /// \param [in] pModelBindings - The model's shader resource binding information.
     /// \param [in] pCacheBindings - Shader resource cache binding information, if the
     ///                              model has been created using the cache.
-    void Render(IDeviceContext*        pCtx,
-                GLTF::Model&           GLTFModel,
-                const RenderInfo&      RenderParams,
-                ModelResourceBindings* pModelBindings,
-                ResourceCacheBindings* pCacheBindings = nullptr);
+    void Render(IDeviceContext*              pCtx,
+                const GLTF::Model&           GLTFModel,
+                const GLTF::ModelTransforms& Transforms,
+                const RenderInfo&            RenderParams,
+                ModelResourceBindings*       pModelBindings,
+                ResourceCacheBindings*       pCacheBindings = nullptr);
 
     /// Creates resource bindings for a given GLTF model
     ModelResourceBindings CreateResourceBindings(GLTF::Model& GLTFModel,
@@ -223,7 +231,10 @@ public:
     void PrecomputeCubemaps(IRenderDevice*     pDevice,
                             IRenderStateCache* pStateCache,
                             IDeviceContext*    pCtx,
-                            ITextureView*      pEnvironmentMap);
+                            ITextureView*      pEnvironmentMap,
+                            Uint32             NumPhiSamples   = 64,
+                            Uint32             NumThetaSamples = 32,
+                            bool               OptimizeSamples = true);
 
     // clang-format off
     ITextureView* GetIrradianceCubeSRV()    { return m_pIrradianceCubeSRV; }
@@ -234,23 +245,46 @@ public:
     ITextureView* GetDefaultNormalMapSRV()  { return m_pDefaultNormalMapSRV; }
     // clang-format on
 
-    /// Creates a shader resource binding for the given material.
+    /// Initializes a shader resource binding for the given material.
 
     /// \param [in] Model          - GLTF model that keeps material textures.
     /// \param [in] Material       - GLTF material to create SRB for.
     /// \param [in] pCameraAttribs - Camera attributes constant buffer to set in the SRB.
     /// \param [in] pLightAttribs  - Light attributes constant buffer to set in the SRB.
-    /// \param [in] pPSO           - Optional PSO object to use to create the SRB instead of the
-    ///                              default PSO. Can be null
-    /// \param [out] ppMaterialSRB - Pointer to memory location where the pointer to the SRB object
-    ///                              will be written.
-    void CreateMaterialSRB(GLTF::Model&             Model,
-                           GLTF::Material&          Material,
-                           IBuffer*                 pCameraAttribs,
-                           IBuffer*                 pLightAttribs,
-                           IPipelineState*          pPSO,
-                           IShaderResourceBinding** ppMaterialSRB);
+    /// \param [in] pMaterialSRB   - A pointer to the SRB object to initialize.
+    void InitMaterialSRB(GLTF::Model&            Model,
+                         GLTF::Material&         Material,
+                         IBuffer*                pCameraAttribs,
+                         IBuffer*                pLightAttribs,
+                         IShaderResourceBinding* pMaterialSRB);
 
+    /// GLTF resource cache use information.
+    struct ResourceCacheUseInfo
+    {
+        /// A pointer to the resource manager.
+        GLTF::ResourceManager* pResourceMgr = nullptr;
+
+        /// Vertex layout key.
+        GLTF::ResourceManager::VertexLayoutKey VtxLayoutKey;
+
+        /// Base color texture format.
+        TEXTURE_FORMAT BaseColorFormat = TEX_FORMAT_RGBA8_UNORM;
+
+        /// Base color texture format for alpha-cut and alpha-blend materials.
+        TEXTURE_FORMAT BaseColorAlphaFormat = TEX_FORMAT_RGBA8_UNORM;
+
+        /// Physical descriptor texture format.
+        TEXTURE_FORMAT PhysicalDescFormat = TEX_FORMAT_RGBA8_UNORM;
+
+        /// Normal map format.
+        TEXTURE_FORMAT NormalFormat = TEX_FORMAT_RGBA8_UNORM;
+
+        /// Occlusion texture format.
+        TEXTURE_FORMAT OcclusionFormat = TEX_FORMAT_RGBA8_UNORM;
+
+        /// Emissive texture format.
+        TEXTURE_FORMAT EmissiveFormat = TEX_FORMAT_RGBA8_UNORM;
+    };
 
     /// Creates a shader resource binding for a GTLF resource cache.
 
@@ -265,13 +299,13 @@ public:
     ///                              default PSO. Can be null
     /// \param [out] ppCacheSRB    - Pointer to memory location where the pointer to the SRB object
     ///                              will be written.
-    void CreateResourceCacheSRB(IRenderDevice*              pDevice,
-                                IDeviceContext*             pCtx,
-                                GLTF::ResourceCacheUseInfo& CacheUseInfo,
-                                IBuffer*                    pCameraAttribs,
-                                IBuffer*                    pLightAttribs,
-                                IPipelineState*             pPSO,
-                                IShaderResourceBinding**    ppCacheSRB);
+    void CreateResourceCacheSRB(IRenderDevice*           pDevice,
+                                IDeviceContext*          pCtx,
+                                ResourceCacheUseInfo&    CacheUseInfo,
+                                IBuffer*                 pCameraAttribs,
+                                IBuffer*                 pLightAttribs,
+                                IPipelineState*          pPSO,
+                                IShaderResourceBinding** ppCacheSRB);
 
     /// Prepares the renderer for rendering objects.
     /// This method must be called at least once per frame.
@@ -281,18 +315,19 @@ public:
     /// Prepares the renderer for rendering objects from the resource cache.
     /// This method must be called at least once per frame before the first object
     /// from the cache is rendered.
-    void Begin(IRenderDevice*              pDevice,
-               IDeviceContext*             pCtx,
-               GLTF::ResourceCacheUseInfo& CacheUseInfo,
-               ResourceCacheBindings&      Bindings,
-               IBuffer*                    pCameraAttribs,
-               IBuffer*                    pLightAttribs,
-               IPipelineState*             pPSO = nullptr);
+    void Begin(IRenderDevice*         pDevice,
+               IDeviceContext*        pCtx,
+               ResourceCacheUseInfo&  CacheUseInfo,
+               ResourceCacheBindings& Bindings,
+               IBuffer*               pCameraAttribs,
+               IBuffer*               pLightAttribs,
+               IPipelineState*        pPSO = nullptr);
 
 private:
     void PrecomputeBRDF(IRenderDevice*     pDevice,
                         IRenderStateCache* pStateCache,
-                        IDeviceContext*    pCtx);
+                        IDeviceContext*    pCtx,
+                        Uint32             NumBRDFSamples = 512);
 
     void CreatePSO(IRenderDevice* pDevice, IRenderStateCache* pStateCache);
 
