@@ -109,7 +109,8 @@ if(DILIGENT_INSTALL_FX)
                 LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}/${DILIGENT_FX_DIR}/$<CONFIG>"
                 RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}/${DILIGENT_FX_DIR}/$<CONFIG>"
         )
-        install(EXPORT DiligentFXTarget
+    # Don't export - depends on Diligent-GraphicsTools which isn't exported
+    #        install(EXPORT DiligentFXTarget
                 FILE DiligentFX-target.cmake
                 NAMESPACE Diligent::
                 DESTINATION lib/cmake/diligent
