@@ -109,12 +109,11 @@ if(DILIGENT_INSTALL_FX)
                 LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}/${DILIGENT_FX_DIR}/$<CONFIG>"
                 RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}/${DILIGENT_FX_DIR}/$<CONFIG>"
         )
-    # Don't export - depends on Diligent-GraphicsTools which isn't exported
-    #        install(EXPORT DiligentFXTarget
-    #            FILE DiligentFX-target.cmake
-    #            NAMESPACE Diligent::
-    #            DESTINATION lib/cmake/diligent
-    #    )
+    install(EXPORT DiligentFXTarget
+        FILE DiligentFX-target.cmake
+        NAMESPACE Diligent::
+        DESTINATION lib/cmake/diligent
+    )
     endif()
     install(DIRECTORY    PostProcess/EpipolarLightScattering/interface
             DESTINATION  "${CMAKE_INSTALL_INCLUDEDIR}/${DILIGENT_FX_DIR}/PostProcess/EpipolarLightScattering"
