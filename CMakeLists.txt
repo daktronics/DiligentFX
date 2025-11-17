@@ -47,6 +47,13 @@ set_common_target_properties(DiligentFX)
 target_include_directories(DiligentFX
 PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${DILIGENT_FX_DIR}/PBR>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${DILIGENT_FX_DIR}/Components>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${DILIGENT_FX_DIR}/PostProcess/Bloom>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${DILIGENT_FX_DIR}/PostProcess/EpipolarLightScattering>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${DILIGENT_FX_DIR}/PostProcess/ScreenSpaceAmbientOcclusion>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${DILIGENT_FX_DIR}/PostProcess/ScreenSpaceReflection>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${DILIGENT_FX_DIR}/PostProcess/TemporalAntiAliasing>
 )
 
 add_subdirectory(Utilities)
