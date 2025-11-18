@@ -15,3 +15,8 @@ set(INCLUDE
 target_sources(DiligentFX PRIVATE ${SOURCE} ${INCLUDE})
 
 get_target_relative_dir(DiligentFX TARGET_RELATIVE_PATH)
+
+target_include_directories(DiligentFX
+PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/interface>
+)
